@@ -16,12 +16,12 @@ public class metasearchtEditor : Editor
 
         if (GUILayout.Button("FindAssets"))
         {
-            myTarget.lines = AssetDatabase.FindAssets(myTarget.keyword);
+            string [] guids = AssetDatabase.FindAssets(myTarget.keyword);
             myTarget.log = "Find : " + myTarget.keyword;
-            foreach (string line in myTarget.lines)
+            foreach (string guid in guids)
             {
-                string path = AssetDatabase.GUIDToAssetPath(line);
-                myTarget.log += "\n" + line + " : " + path;
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                myTarget.log += "\n" + guid + " : " + path;
             }
         }
 
@@ -119,9 +119,9 @@ public class metasearchtEditor : Editor
                     {
                         if (!foundGUID.Contains(own) && !searchGUID.Contains(own) && !nextGUID.Contains(own))
                         {
-                            ownlog += " \r\n";
+                            ownlog += " \n";
                             string path = AssetDatabase.GUIDToAssetPath(own);
-                            string currline = depth + "," + own + "," + path + " " + currentGUID + "\r\n";
+                            string currline = depth + "," + own + "," + path + " " + currentGUID;
                             ownlog += currline;
                             nextGUID.Add(own);
                         }

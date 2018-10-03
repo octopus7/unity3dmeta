@@ -4,7 +4,6 @@ using UnityEngine;
 public class metasearch : MonoBehaviour {
 
     public string keyword;
-    public string [] lines;
 
     public string guid;
 
