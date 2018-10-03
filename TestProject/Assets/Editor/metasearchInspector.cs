@@ -29,35 +29,67 @@ public class metasearchtEditor : Editor
         {
             // Retrieves only the assets of the project
             List<string> paths = new List<string>(AssetDatabase.GetAllAssetPaths());
-            myTarget.lines = paths.Where(item => item.Contains("Assets/")).ToArray<string>();
+            List<string> assetsPaths = paths.Where(item => item.Contains("Assets/")).ToList();
 
             string log = "";
             dicRefGuid.Clear();
 
-            foreach (string path in myTarget.lines)
+            int countAssets = 0;
+            int countREFs = 0;
+
+            foreach (string path in assetsPaths)
             {
+                countAssets++;
+
                 string ownguid = AssetDatabase.AssetPathToGUID(path);
-                log += "\n" + ownguid + " : " + path ;
+                if(countAssets<10) log += "\n" + ownguid + " : " + path ;                
 
                 dicRefGuid[ownguid] = new HashSet<string>();
                 // Do not recursive search because you need depth.
-                string[] refGUIDs = AssetDatabase.GetDependencies(path, false); 
+                string[] refPaths = AssetDatabase.GetDependencies(path, false); 
 
-                foreach (string refpath in refGUIDs)
+                foreach (string refpath in refPaths)
                 {
-                    if(refpath == path) continue;
+                    countREFs++;
+                    if (refpath == path) continue;
                     string refguid = AssetDatabase.AssetPathToGUID(refpath);
-                    log += "\n\t - " + refguid + " : " + refpath;
+                    if (countAssets < 10) log += "\n\t - " + refguid + " : " + refpath;
                     dicRefGuid[ownguid].Add(refguid);
                 }
             }
-            myTarget.log = log;
+
+            myTarget.log = countAssets + " assets " + countREFs + " REFs\n" + log;
         }
 
         if (GUILayout.Button("Find GUID Reverse REF"))
         {
             myTarget.log = FindRef(myTarget.guid);
-        }        
+        }
+
+        if (GUILayout.Button("Find Orphaned"))
+        {
+            string log = "Orphaned";
+
+            HashSet<string> allhash = new HashSet<string>();
+            foreach (var pair in dicRefGuid)
+            {
+                var hashset = pair.Value;
+                allhash.UnionWith(hashset);
+            }
+            foreach (var pair2 in dicRefGuid)
+            {
+                string guid = pair2.Key;
+                if ( pair2.Value.Count == 0 && !allhash.Contains(guid))
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (path.Contains("/Editor/")) continue;
+                    if (AssetDatabase.IsValidFolder(path)) continue;
+
+                    log += "\n" + guid + " : " + path;
+                }
+            }
+            myTarget.log = log;
+        }
     }
 
     private string FindRef(string guid, int maxDepth = 3)
@@ -89,7 +121,7 @@ public class metasearchtEditor : Editor
                         {
                             ownlog += " \r\n";
                             string path = AssetDatabase.GUIDToAssetPath(own);
-                            string currline = "[" + header + "]," + depth + "," + own + "," + path + " " + currentGUID + "\r\n";
+                            string currline = depth + "," + own + "," + path + " " + currentGUID + "\r\n";
                             ownlog += currline;
                             nextGUID.Add(own);
                         }
